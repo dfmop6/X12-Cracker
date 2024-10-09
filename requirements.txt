@@ -1,1 +1,2 @@
 # The needed libs for parsing
+pypdf
