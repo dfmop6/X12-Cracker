@@ -1,0 +1,37 @@
+## mainTable
+Interchange Control Header
+Functional Group Header
+
+Transaction Set Header
+Party Identification
+Party Location
+Geographic Location
+Transaction Set Line Number
+
+Party Identification
+Additional Name Information
+Party Location
+Geographic Location
+Administrative Communications Contact
+
+Item Identification
+Date/Time Reference
+Transaction Set Trailer
+Functional Group Trailer
+Interchange Control Trailer
+
+
+
+##Id
+ISA
+GS
+LX
+N1
+N2
+N3
+N4
+PER
+LIN
+DTM
+SE
+GE
