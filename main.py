@@ -1,11 +1,28 @@
 import pdfplumber
 
+def int_checker(string_val):
+    try:
+        int(string_val)
+        return True
+    except ValueError:
+        return False
+
+def trim_string(string):
+  return string.strip()
 
 source_file = "data/The_Home_Depot_-_EDI_Specifications_and_Examples_-_Suppliers[1] (1).pdf" 
-
 maintable_config = {
     'headers':["Pos", "Id", "Segment Name", "Req", "Max Use", "Repeat", "Notes", "Usage"]
 }
+maintable_data = {}
+
+head_doors = {
+    'ISA': 'Interchange Control Header',
+    'GS': 'Functional Group Header',
+    'GE': 'Functional Group Trailer',
+    'IEA': 'Interchange Control Trailer'
+}
+
 big__titels = ["Heading", "Not Defined", 'Detail', 'tail']
 
 with pdfplumber.open(source_file) as pdf:
@@ -44,10 +61,43 @@ with pdfplumber.open(source_file) as pdf:
 
     #Data Cleaning - when the maintable_config
     headers_ = " ".join(maintable_config["headers"])
-    
+    content = list(maintable_config.items())[1:]
     for key, value in list(maintable_config.items())[1:]:
         for e in value:
             if "".join(e) == headers_:
                 value.remove(e)
+
+    with open('bag_words.txt','r') as f:
+        all_text = f.read().split("########")
+        segment_name = all_text[0].split("\n")
+        ids = all_text[1].split("\n")
+
+
+    # Envelope data processing
+
+    fixedTails = ["Must use", "Used"]
+    maintable_config['table'] = []
+    for k, v in content:
+        for x in v:
+            c_val = x.split(" ")
+            if k in ["Not Defined", "tail"] and not int_checker(head_doors[c_val[0]]):
+                leading = ['None', c_val[0],head_doors[c_val[0]]]
+                beg = c_val[0] + " " + head_doors[c_val[0]]
+                tail = x.split(beg)[1]
+                if "Must use" in tail:
+                    tail = trim_string(tail.split("Must use")[0])
+                    middle_values = tail.split(" ")
+                    middle_values.append("Must use")
+                else:
+                    tail = trim_string(tail.split("Must use")[0])
+                    middle_values = tail.split(" ")
+                    middle_values.append("Used")
+
+                leading.extend(middle_values)
+                maintable_config['table'].append(leading)
+            
+            else:
+                ...
+
 
     print(maintable_config)
