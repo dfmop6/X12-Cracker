@@ -35,10 +35,10 @@ with pdfplumber.open(source_file) as pdf:
         
         if not processed and any(e.startswith(x) for x in big__titels):
             end_idx = i
-            maintable_config[title] = table_content[start_idx: end_idx]
+            maintable_config[title] = table_content[start_idx + 1: end_idx]
             start_idx = -1
         
         if e.startswith("IEA"):
-            maintable_config["tail"] = table_content[end_idx: i + 1]
+            maintable_config["tail"] = table_content[end_idx + 1: i + 1]
 
     print(maintable_config)

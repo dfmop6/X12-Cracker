@@ -10,13 +10,11 @@
         "Usage"
     ],
     "Not Defined": [
-        "Not Defined:",
         "Pos Id Segment Name Req Max Use Repeat Notes Usage",
         "ISA Interchange Control Header M 1 Must use",
         "GS Functional Group Header M 1 Must use"
     ],
     "Detail": [
-        "Detail:",
         "Pos Id Segment Name Req Max Use Repeat Notes Usage",
         "LLOOOOPP IIDD -- LLXX >>11 NN22//00110000LL",
         "0100 LX Transaction Set Line M 1 N2/0100 Must use",
@@ -35,7 +33,6 @@
         "4700 SE Transaction Set Trailer M 1 Must use"
     ],
     "tail": [
-        "Not Defined:",
         "Pos Id Segment Name Req Max Use Repeat Notes Usage",
         "GE Functional Group Trailer M 1 Must use",
         "IEA Interchange Control Trailer M 1 Must use"
