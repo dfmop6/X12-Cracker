@@ -6,7 +6,7 @@ source_file = "data/The_Home_Depot_-_EDI_Specifications_and_Examples_-_Suppliers
 maintable_config = {
     'headers':["Pos", "Id", "Segment Name", "Req", "Max Use", "Repeat", "Notes", "Usage"]
 }
-big__titels = ["Heading", "Not Defined", 'Detail']
+big__titels = ["Heading", "Not Defined", 'Detail', 'tail']
 
 with pdfplumber.open(source_file) as pdf:
     # for page in pdf.pages[13]:        
@@ -26,6 +26,7 @@ with pdfplumber.open(source_file) as pdf:
     start_idx, end_idx = -1, -1
     processed = False
     
+    # Data Separator - based on big__titels
     for i, e in enumerate(table_content):
         processed = False
         if start_idx == -1 and any(e.startswith(s) for s in big__titels):
@@ -40,5 +41,13 @@ with pdfplumber.open(source_file) as pdf:
         
         if e.startswith("IEA"):
             maintable_config["tail"] = table_content[end_idx + 1: i + 1]
+
+    #Data Cleaning - when the maintable_config
+    headers_ = " ".join(maintable_config["headers"])
+    
+    for key, value in list(maintable_config.items())[1:]:
+        for e in value:
+            if "".join(e) == headers_:
+                value.remove(e)
 
     print(maintable_config)
