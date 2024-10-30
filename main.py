@@ -46,6 +46,7 @@ def detail_process(data_list):
         except the envelope data. [ISA, GS, GE, IEA]
     """
     recovred_list = []
+    inx = lambda v: next((i for i, e in enumerate(v) if len(e) == 1), -1)
     for i, seg in enumerate(data_list):
         first_elmnt = seg.split(" ")[0]
         if first_elmnt in loop__keys:
@@ -53,16 +54,22 @@ def detail_process(data_list):
         elif int_checker(first_elmnt):
             recovred_list.append(seg)
         else:
+            """
+            This process is responsible for Converting thi two lines:
+                '0100 LX Transaction Set Line M 1 N2/0100 Must use'
+                'Number'
+            to this on concatenated line:
+                '0100 LX Transaction Set Line Number M 1 N2/0100 Must use'
+            """
             previous_line = data_list[i-1].split(" ")
-            print(previous_line)
-            previous_line[2] = previous_line[2] + " " + data_list[i]
+            previous_line.insert(inx(previous_line),  data_list[i])
             recovred_list.append(" ".join(previous_line))
             recovred_list.remove(data_list[i-1])
     
     return recovred_list
 
 with pdfplumber.open(source_file) as pdf:
-    
+
     # get the page for the manu content.
     first_page = pdf.pages[manu_page_number]
     table = first_page.extract_text().split("\n")
