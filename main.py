@@ -27,6 +27,10 @@ def int_checker(string_val):
 def trim_string(string):
   return string.strip()
 
+def save(filename, datadump):
+    with open("test.json", "w") as f:
+        json.dump(maintable_config, f)
+
 def clean_string_format(input_string):
     result, tt = [], []
     vv = input_string.split(" ")
@@ -69,7 +73,6 @@ def detail_process(data_list):
     return recovred_list
 
 with pdfplumber.open(source_file) as pdf:
-
     # get the page for the manu content.
     first_page = pdf.pages[manu_page_number]
     table = first_page.extract_text().split("\n")
@@ -86,20 +89,27 @@ with pdfplumber.open(source_file) as pdf:
     processed = False
     
     # Data Separator - based on big__titels
+    title = ""
+
     for i, e in enumerate(table_content):
-        processed = False
         if start_idx == -1 and any(e.startswith(s) for s in big__titels):
             start_idx = i
-            title =  table_content[i][:-1]
-            processed = True 
-        
-        if not processed and any(e.startswith(x) for x in big__titels):
+            title = table_content[i][:-1] 
+            continue
+
+        # If end of a section is detected and 'start_idx' is set, capture the section content
+        if start_idx != -1 and any(e.startswith(x) for x in big__titels):
             end_idx = i
             maintable_config[title] = table_content[start_idx + 1: end_idx]
-            start_idx = -1
-        
+            start_idx = i 
+            title = e[:-1]
+            continue
+
+        # If the footer "IEA" is found, add remaining table content
         if e.startswith("IEA"):
-            maintable_config["tail"] = table_content[end_idx + 1: i + 1]
+            maintable_config["tail"] = table_content[start_idx + 1: i + 1]
+            break 
+    
 
     #Data Cleaning - when the maintable_config
     headers_ = " ".join(maintable_config["headers"])
@@ -140,6 +150,4 @@ with pdfplumber.open(source_file) as pdf:
             d = detail_process(v)
             maintable_config['table'].append(d)
 
-    with open("test.json", "w") as f:
-        json.dump(maintable_config, f)
-
+    save("test.json", maintable_config)
