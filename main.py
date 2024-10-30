@@ -1,5 +1,21 @@
 import pdfplumber
-import re
+# import re
+import json
+
+source_file = "data/The_Home_Depot_-_EDI_Specifications_and_Examples_-_Suppliers[1] (1).pdf" 
+maintable_config = {
+    'headers':["Pos", "Id", "Segment Name", "Req", "Max Use", "Repeat", "Notes", "Usage"]
+}
+maintable_data = {}
+head_doors = {
+    'ISA': 'Interchange Control Header',
+    'GS': 'Functional Group Header',
+    'GE': 'Functional Group Trailer',
+    'IEA': 'Interchange Control Trailer'
+}
+big__titels = ["Heading", "Not Defined", 'Detail', 'tail']
+loop__keys = ["LLOOOOPP", 'LOOP']
+manu_page_number = 13
 
 def int_checker(string_val):
     try:
@@ -25,6 +41,10 @@ def clean_string_format(input_string):
     return ' '.join(tt)
 
 def detail_process(data_list):
+    """
+        Process The details content for the Amnu table except
+        except the envelope data. [ISA, GS, GE, IEA]
+    """
     recovred_list = []
     for i, seg in enumerate(data_list):
         first_elmnt = seg.split(" ")[0]
@@ -33,30 +53,18 @@ def detail_process(data_list):
         elif int_checker(first_elmnt):
             recovred_list.append(seg)
         else:
-            recovred_list.append(data_list[i-1] + " " + data_list[i])
+            previous_line = data_list[i-1].split(" ")
+            print(previous_line)
+            previous_line[2] = previous_line[2] + " " + data_list[i]
+            recovred_list.append(" ".join(previous_line))
             recovred_list.remove(data_list[i-1])
     
     return recovred_list
 
-source_file = "data/The_Home_Depot_-_EDI_Specifications_and_Examples_-_Suppliers[1] (1).pdf" 
-maintable_config = {
-    'headers':["Pos", "Id", "Segment Name", "Req", "Max Use", "Repeat", "Notes", "Usage"]
-}
-maintable_data = {}
-head_doors = {
-    'ISA': 'Interchange Control Header',
-    'GS': 'Functional Group Header',
-    'GE': 'Functional Group Trailer',
-    'IEA': 'Interchange Control Trailer'
-}
-big__titels = ["Heading", "Not Defined", 'Detail', 'tail']
-loop__keys = ["LLOOOOPP", 'LOOP']
-
 with pdfplumber.open(source_file) as pdf:
-    # for page in pdf.pages[13]:        
-    #     print(page.extract_text()) 
-
-    first_page = pdf.pages[13]
+    
+    # get the page for the manu content.
+    first_page = pdf.pages[manu_page_number]
     table = first_page.extract_text().split("\n")
         
     try:
@@ -99,7 +107,6 @@ with pdfplumber.open(source_file) as pdf:
         segment_name = all_text[0].split("\n")
         ids = all_text[1].split("\n")
 
-
     # Envelope data processing
     fixedTails = ["Must use", "Used"]
     maintable_config['table'] = []
@@ -126,7 +133,6 @@ with pdfplumber.open(source_file) as pdf:
             d = detail_process(v)
             maintable_config['table'].append(d)
 
-
-
-    print(maintable_config)
+    with open("test.json", "w") as f:
+        json.dump(maintable_config, f)
 
