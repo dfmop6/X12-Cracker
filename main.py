@@ -72,82 +72,91 @@ def detail_process(data_list):
     
     return recovred_list
 
-with pdfplumber.open(source_file) as pdf:
-    # get the page for the manu content.
-    first_page = pdf.pages[manu_page_number]
-    table = first_page.extract_text().split("\n")
+def run():
+    with pdfplumber.open(source_file) as pdf:
+        # get the page for the manu content.
+        first_page = pdf.pages[manu_page_number]
+        table = first_page.extract_text().split("\n")
+            
+        try:
+            idx = table.index("Not Defined:")
+            table_content = table[idx:]  
+            [print(x) for x in table_content]
+
+        except ValueError:
+            table_content = []  
+
+        start_idx, end_idx = -1, -1
+        processed = False
         
-    try:
-        idx = table.index("Not Defined:")
-        table_content = table[idx:]  
-        [print(x) for x in table_content]
+        # Data Separator - based on big__titels
+        title = ""
 
-    except ValueError:
-        table_content = []  
+        for i, e in enumerate(table_content):
+            if start_idx == -1 and any(e.startswith(s) for s in big__titels):
+                start_idx = i
+                title = table_content[i][:-1] 
+                continue
 
-    start_idx, end_idx = -1, -1
-    processed = False
-    
-    # Data Separator - based on big__titels
-    title = ""
+            # If end of a section is detected and 'start_idx' is set, capture the section content
+            if start_idx != -1 and any(e.startswith(x) for x in big__titels):
+                end_idx = i
+                maintable_config[title] = table_content[start_idx + 1: end_idx]
+                start_idx = i 
+                title = e[:-1]
+                continue
 
-    for i, e in enumerate(table_content):
-        if start_idx == -1 and any(e.startswith(s) for s in big__titels):
-            start_idx = i
-            title = table_content[i][:-1] 
-            continue
+            # If the footer "IEA" is found, add remaining table content
+            if e.startswith("IEA"):
+                maintable_config["tail"] = table_content[start_idx + 1: i + 1]
+                break 
+        
+        #Data Cleaning - when the maintable_config
+        headers_ = " ".join(maintable_config["headers"])
+        content = list(maintable_config.items())[1:]
+        for key, value in list(maintable_config.items())[1:]:
+            for e in value:
+                if "".join(e) == headers_:
+                    value.remove(e)
 
-        # If end of a section is detected and 'start_idx' is set, capture the section content
-        if start_idx != -1 and any(e.startswith(x) for x in big__titels):
-            end_idx = i
-            maintable_config[title] = table_content[start_idx + 1: end_idx]
-            start_idx = i 
-            title = e[:-1]
-            continue
+        with open('bag_words.txt','r') as f:
+            all_text = f.read().split("########")
+            segments_name = all_text[0].split("\n")
+            ids = all_text[1].split("\n")
 
-        # If the footer "IEA" is found, add remaining table content
-        if e.startswith("IEA"):
-            maintable_config["tail"] = table_content[start_idx + 1: i + 1]
-            break 
-    
+        # Envelope data processing
+        fixedTails = ["Must use", "Used"]
+        maintable_config['table'] = []
+        for k, v in content:
+            if k in ["Not Defined", "tail"]:
+                maintable_config['table'].append(v)
+            elif k in ["Heading"]:
+                d = detail_process(v)
+                maintable_config['table'].append(d)
+            else:
+                d = detail_process(v)
+                maintable_config['table'].append(d)
 
-    #Data Cleaning - when the maintable_config
-    headers_ = " ".join(maintable_config["headers"])
-    content = list(maintable_config.items())[1:]
-    for key, value in list(maintable_config.items())[1:]:
-        for e in value:
-            if "".join(e) == headers_:
-                value.remove(e)
+        save("test.json", maintable_config)
 
-    with open('bag_words.txt','r') as f:
-        all_text = f.read().split("########")
-        segment_name = all_text[0].split("\n")
-        ids = all_text[1].split("\n")
 
-    # Envelope data processing
-    fixedTails = ["Must use", "Used"]
-    maintable_config['table'] = []
-    for k, v in content:
-        if k in ["Not Defined", "tail"]:
-            for x in v:
-                c_val = x.split(" ")
-                if not int_checker(head_doors[c_val[0]]):
-                    leading = ['None', c_val[0],head_doors[c_val[0]]]
-                    beg = c_val[0] + " " + head_doors[c_val[0]]
-                    tail = x.split(beg)[1]
-                    if "Must use" in tail:
-                        tail = trim_string(tail.split("Must use")[0])
-                        middle_values = tail.split(" ")
-                        middle_values.append("Must use")
-                    else:
-                        tail = trim_string(tail.split("Must use")[0])
-                        middle_values = tail.split(" ")
-                        middle_values.append("Used")
+with open('bag_words.txt','r') as f:
+    all_text = f.read().split("########")
+    segments_name = all_text[0].split("\n")
+    ids = all_text[1].split("\n")
 
-                    leading.extend(middle_values)
-                    maintable_config['table'].append(leading)
-        else:
-            d = detail_process(v)
-            maintable_config['table'].append(d)
-
-    save("test.json", maintable_config)
+xenos = "0600 PER Administrative Communications Contact O >1 N2/0600 Used"
+rules = {
+    "Pos": "Integer",
+    "Id": ids,
+    "Segment Name": segments_name,
+    "Req": ["O", "M"],
+    "Max Use": "Integer",
+    "Repeat": ">1 Integer",
+    "Notes":"N2/0600 => this format",
+    "Usage": ["Must use", "Used"]
+}
+eno = lambda v: next((i for i, e in enumerate(segments_name) if e in xenos), -1)
+seg = segments_name[eno(xenos)]
+s = xenos.split(seg)
+s
